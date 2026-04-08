@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WFH Family Hub</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #ededea;
+    --text: #1a1a18;
+    --text2: #6b6b66;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.2);
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --purple-dark: #3C3489;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+  .app { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .logo { font-size: 20px; font-weight: 600; color: var(--text); }
+  .logo span { color: var(--purple); }
+  .tabs { display: flex; gap: 4px; background: var(--bg2); padding: 4px; border-radius: var(--radius); margin-bottom: 1.5rem; overflow-x: auto; }
+  .tab { flex: 1; min-width: 70px; padding: 8px 10px; border: none; background: transparent; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text2); font-weight: 400; transition: all .15s; white-space: nowrap; }
+  .tab.active { background: var(--bg); color: var(--text); font-weight: 600; border: 1px solid var(--border); }
+  .panel { display: none; } .panel.active { display: block; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
+  .metric-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .metric-value { font-size: 24px; font-weight: 600; }
+  .metric-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 12px; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: none; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .av-p { background: #EEEDFE; color: #3C3489; }
+  .av-t { background: #E1F5EE; color: #085041; }
+  .av-s { background: #FAECE7; color: #712B13; }
+  .row-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; }
+  .b-green { background: #EAF3DE; color: #27500A; }
+  .b-amber { background: #FAEEDA; color: #633806; }
+  .b-blue { background: #E6F1FB; color: #0C447C; }
+  .b-gray { background: #F1EFE8; color: #444441; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--border2); border-radius: var(--radius); background: transparent; font-size: 13px; cursor: pointer; color: var(--text); transition: all .15s; }
+  .btn:hover { background: var(--bg2); }
+  .btn-primary { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .btn-primary:hover { background: var(--purple-dark); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type="text"], input[type="time"], select, textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius);
+    background: var(--bg); color: var(--text); font-size: 13px; margin-bottom: 8px; outline: none;
+    font-family: inherit;
+  }
+  input[type="text"]:focus, input[type="time"]:focus, select:focus { border-color: var(--purple); }
+  .timer-wrap { text-align: center; padding: 1rem 0; }
+  .timer-ring { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 180px; height: 180px; margin-bottom: 1.5rem; }
+  .timer-ring svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+  .timer-text { z-index: 1; }
+  .timer-num { font-size: 36px; font-weight: 700; }
+  .timer-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .task-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .task-item:last-child { border-bottom: none; }
+  .task-check { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border2); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .task-check.done { background: var(--purple); border-color: var(--purple); }
+  .task-check.done::after { content: ''; width: 5px; height: 9px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg); display: block; margin-top: -2px; }
+  .task-text { font-size: 13px; flex: 1; }
+  .task-text.done { text-decoration: line-through; color: var(--text2); }
+  .task-kid { font-size: 11px; color: var(--text2); }
+  .sch-row { display: grid; grid-template-columns: 65px 1fr; gap: 0; margin-bottom: 3px; }
+  .sch-time { font-size: 11px; color: var(--text2); padding-top: 7px; }
+  .sch-block { border-radius: 6px; padding: 6px 10px; margin-bottom: 3px; }
+  .sch-title { font-size: 12px; font-weight: 600; }
+  .sch-who { font-size: 11px; opacity: .75; margin-top: 1px; }
+  .noise-card { background: #E1F5EE; border-radius: var(--radius-lg); padding: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background .15s; }
+  .noise-card.active { background: #9FE1CB; }
+  .noise-icon { width: 38px; height: 38px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; border: 1px solid var(--border); }
+  .noise-name { font-size: 13px; font-weight: 600; color: #085041; }
+  .noise-desc { font-size: 11px; color: #0F6E56; }
+  .progress-bar { height: 8px; background: var(--bg2); border-radius: 4px; overflow: hidden; margin: 8px 0; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width .4s, background .4s; }
+  .mood-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 6px; margin-bottom: 12px; }
+  .mood-btn { padding: 10px 4px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); cursor: pointer; text-align: center; transition: all .15s; }
+  .mood-btn:hover, .mood-btn.sel { background: var(--purple-light); border-color: #AFA9EC; }
+  .mood-emoji { font-size: 20px; }
+  .mood-lbl { font-size: 10px; color: var(--text2); margin-top: 3px; }
+  .tip { background: var(--bg2); border-left: 3px solid var(--purple); border-radius: 0 var(--radius) var(--radius) 0; padding: 10px 14px; font-size: 13px; color: var(--text2); margin-bottom: 12px; line-height: 1.5; }
+  .section-kid { margin-bottom: 14px; }
+  .section-kid-name { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--purple); }
+  .upgrade-banner { background: linear-gradient(135deg, #534AB7, #3C3489); color: #fff; border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 12px; }
+  .upgrade-banner h3 { font-size: 15px; margin-bottom: 6px; }
+  .upgrade-banner p { font-size: 13px; opacity: .85; margin-bottom: 12px; line-height: 1.5; }
+  .btn-white { background: #fff; color: var(--purple); border-color: #fff; font-weight: 600; }
+  .btn-white:hover { background: #f0eeff; }
+  @media (max-width: 500px) { .cards { grid-template-columns: 1fr 1fr; } .cards .metric:last-child { grid-column: span 2; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="logo">WFH <span>Family Hub</span></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm btn-primary" onclick="switchTab('upgrade')">Upgrade to Pro</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="switchTab('schedule')">Schedule</button>
+    <button class="tab" onclick="switchTab('focus')">Focus Timer</button>
+    <button class="tab" onclick="switchTab('tasks')">Tasks</button>
+    <button class="tab" onclick="switchTab('noise')">Sounds</button>
+    <button class="tab" onclick="switchTab('upgrade')">Pro</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="panel active">
+    <div class="cards">
+      <div class="metric">
+        <div class="metric-label">Focus time today</div>
+        <div class="metric-value" id="focus-today">0h 0m</div>
+        <div class="metric-sub">Goal: 4 hours</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Tasks done</div>
+        <div class="metric-value" id="tasks-stat">0/0</div>
+        <div class="metric-sub">Kids' tasks</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Interruptions</div>
+        <div class="metric-value" id="interrupt-count">0</div>
+        <div class="metric-sub"><button class="btn btn-sm" style="margin-top:4px" onclick="logInterrupt()">+ Log one</button></div>
+      </div>
+    </div>
+
+    <div class="tip">Welcome! Add your kids below, then build their schedule to keep them busy during your work hours.</div>
+
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">Kids at home</div>
+        <button class="btn btn-sm btn-primary" onclick="showAddKid()">+ Add kid</button>
+      </div>
+      <div id="kid-list"><p style="font-size:13px;color:var(--text2);padding:8px 0">No kids added yet. Click "+ Add kid" to get started.</p></div>
+    </div>
+
+    <div id="add-kid-form" class="card" style="display:none">
+      <div class="card-title">Add a child</div>
+      <input type="text" id="kid-name" placeholder="Child's name">
+      <input type="text" id="kid-age" placeholder="Age (e.g. 8)">
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="addKid()">Save</button>
+        <button class="btn" onclick="document.getElementById('add-kid-form').style.display='none'">Cancel</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quick actions</div>
+      <div class="btn-group">
+        <button class="btn" onclick="switchTab('focus')">Start focus timer</button>
+        <button class="btn" onclick="switchTab('tasks')">Add kid task</button>
+        <button class="btn" onclick="switchTab('noise')">Play focus sounds</button>
+        <button class="btn" onclick="switchTab('schedule')">Build schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div id="schedule" class="panel">
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">Today's schedule</div>
+      </div>
+      <div id="schedule-blocks">
+        <p style="font-size:13px;color:var(--text2);padding:8px 0">No blocks yet. Add one below.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Add a time block</div>
+      <input type="time" id="block-time" value="09:00">
+      <input type="text" id="block-title" placeholder="Activity (e.g. Reading, Lego time, Snack break)">
+      <select id="block-who">
+        <option value="parent">Parent — focus block</option>
+        <option value="all">All kids</option>
+      </select>
+      <button class="btn btn-primary" onclick="addBlock()" style="width:100%">Add block</button>
+    </div>
+  </div>
+
+  <!-- FOCUS TIMER -->
+  <div id="focus" class="panel">
+    <div class="card timer-wrap">
+      <div class="card-title" style="text-align:left">Pomodoro focus timer</div>
+      <div class="timer-ring">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="78" fill="none" stroke="#ededea" stroke-width="10"/>
+          <circle id="timer-arc" cx="90" cy="90" r="78" fill="none" stroke="#534AB7" stroke-width="10"
+            stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="0" style="transition:stroke-dashoffset .8s"/>
+        </svg>
+        <div class="timer-text">
+          <div class="timer-num" id="timer-display">25:00</div>
+          <div class="timer-label" id="timer-status">Focus block</div>
+        </div>
+      </div>
+      <div class="btn-group" style="justify-content:center;margin-bottom:1rem">
+        <button class="btn btn-primary" id="timer-toggle" onclick="toggleTimer()">Start</button>
+        <button class="btn" onclick="resetTimer()">Reset</button>
+      </div>
+      <select id="timer-mode" onchange="setMode()" style="width:auto;display:inline-block;margin-bottom:0">
+        <option value="25">25 min focus</option>
+        <option value="50">50 min deep work</option>
+        <option value="5">5 min break</option>
+        <option value="15">15 min break</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Kids mood check-in</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Check in before your focus block starts.</p>
+      <div id="mood-panel"><p style="font-size:13px;color:var(--text2)">Add kids on the Dashboard first.</p></div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div id="tasks" class="panel">
+    <div class="card">
+      <div class="flex-between">
+        <div class="card-title">Kids' task list</div>
+      </div>
+      <div id="task-list"><p style="font-size:13px;color:var(--text2);padding:8px 0">No tasks yet. Add one below.</p></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Add a task</div>
+      <input type="text" id="task-input" placeholder="e.g. Read for 20 min, Math worksheet, Draw a picture">
+      <select id="task-who-select">
+        <option value="">Select a child</option>
+      </select>
+      <button class="btn btn-primary" onclick="addTask()" style="width:100%">Add task</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Activity ideas by age</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.8">
+        <strong>Ages 3–5:</strong> Playdough, coloring, puzzles, sticker books<br>
+        <strong>Ages 6–8:</strong> Lego, drawing, reading, simple board games<br>
+        <strong>Ages 9–11:</strong> Workbooks, coding apps, crafts, journaling<br>
+        <strong>Ages 12+:</strong> Study time, online courses, cooking simple meals
+      </div>
+    </div>
+  </div>
+
+  <!-- SOUNDS -->
+  <div id="noise" class="panel">
+    <div class="card">
+      <div class="card-title">Focus sounds</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Mask household noise during work calls. Click to select.</p>
+      <div id="noise-list"></div>
+      <div style="margin-top:16px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Volume: <span id="vol-label">60</span>%</div>
+        <input type="range" min="0" max="100" value="60" id="vol-slider" oninput="document.getElementById('vol-label').textContent=this.value">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Noise level meter</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:10px">Simulated ambient noise indicator</p>
+      <div class="progress-bar"><div class="progress-fill" id="noise-fill" style="width:40%;background:#5DCAA5"></div></div>
+      <div style="font-size:12px;color:var(--text2)" id="noise-text">Moderate — okay for most calls</div>
+    </div>
+  </div>
+
+  <!-- UPGRADE / PRO -->
+  <div id="upgrade" class="panel">
+    <div class="upgrade-banner">
+      <h3>WFH Family Hub Pro</h3>
+      <p>Everything you need to stay productive while your kids are home — unlimited kids, AI schedule builder, weekly focus reports, and more.</p>
+      <button class="btn btn-white" onclick="alert('Connect Stripe to accept payments here!')">Get Pro — $7/month</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Free vs Pro</div>
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 0;border-bottom:1px solid var(--border);font-weight:600">Feature</th>
+            <th style="text-align:center;padding:8px 0;border-bottom:1px solid var(--border);font-weight:600">Free</th>
+            <th style="text-align:center;padding:8px 0;border-bottom:1px solid var(--border);font-weight:600;color:var(--purple)">Pro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:8px 0;border-bottom:1px solid var(--border)">Kid profiles</td><td style="text-align:center;border-bottom:1px solid var(--border)">2</td><td style="text-align:center;border-bottom:1px solid var(--border);color:var(--purple)">Unlimited</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid var(--border)">Focus timer</td><td style="text-align:center;border-bottom:1px solid var(--border)">✓</td><td style="text-align:center;border-bottom:1px solid var(--border);color:var(--purple)">✓</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid var(--border)">Task lists</td><td style="text-align:center;border-bottom:1px solid var(--border)">✓</td><td style="text-align:center;border-bottom:1px solid var(--border);color:var(--purple)">✓</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid var(--border)">Focus sounds</td><td style="text-align:center;border-bottom:1px solid var(--border)">5 sounds</td><td style="text-align:center;border-bottom:1px solid var(--border);color:var(--purple)">20+ sounds</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid var(--border)">AI schedule builder</td><td style="text-align:center;border-bottom:1px solid var(--border)">—</td><td style="text-align:center;border-bottom:1px solid var(--border);color:var(--purple)">✓</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid var(--border)">Weekly focus reports</td><td style="text-align:center;border-bottom:1px solid var(--border)">—</td><td style="text-align:center;border-bottom:1px solid var(--border);color:var(--purple)">✓</td></tr>
+          <tr><td style="padding:8px 0;border-bottom:1px solid var(--border)">Email reminders</td><td style="text-align:center;border-bottom:1px solid var(--border)">—</td><td style="text-align:center;border-bottom:1px solid var(--border);color:var(--purple)">✓</td></tr>
+          <tr><td style="padding:8px 0">Calendar sync</td><td style="text-align:center">—</td><td style="text-align:center;color:var(--purple)">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---- STATE ----
+let kids = [];
+let tasks = [];
+let scheduleBlocks = [];
+let interruptCount = 0;
+let focusMinutes = 0;
+let timerInterval = null, timerRunning = false;
+let timerSecs = 25 * 60, timerTotal = 25 * 60;
+let activeNoise = null;
+let noiseLevel = 40;
+
+// ---- TABS ----
+function switchTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + id + "'")) t.classList.add('active');
+  });
+  if (id === 'focus') renderMoods();
+  if (id === 'tasks') renderTaskWhoSelect();
+  if (id === 'schedule') renderScheduleWhoSelect();
+}
+
+// ---- KIDS ----
+function showAddKid() {
+  document.getElementById('add-kid-form').style.display = 'block';
+  document.getElementById('kid-name').focus();
+}
+
+function addKid() {
+  const name = document.getElementById('kid-name').value.trim();
+  const age = document.getElementById('kid-age').value.trim();
+  if (!name) return;
+  const avatars = ['av-p','av-t','av-s'];
+  kids.push({ name, age, status: 'free play', avatarClass: avatars[kids.length % 3] });
+  document.getElementById('kid-name').value = '';
+  document.getElementById('kid-age').value = '';
+  document.getElementById('add-kid-form').style.display = 'none';
+  renderKids();
+  renderTaskWhoSelect();
+  renderScheduleWhoSelect();
+}
+
+const statusColors = { 'studying': 'b-green', 'free play': 'b-blue', 'on break': 'b-amber', 'done': 'b-green' };
+
+function renderKids() {
+  const el = document.getElementById('kid-list');
+  if (kids.length === 0) { el.innerHTML = '<p style="font-size:13px;color:var(--text2);padding:8px 0">No kids added yet. Click "+ Add kid" to get started.</p>'; return; }
+  el.innerHTML = kids.map((k, i) => `
+    <div class="row">
+      <div class="avatar ${k.avatarClass}">${k.name[0]}</div>
+      <div class="row-name">${k.name} <span style="font-weight:400;color:var(--text2);font-size:12px">${k.age ? 'age '+k.age : ''}</span></div>
+      <select style="font-size:12px;padding:4px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text)" onchange="updateKidStatus(${i}, this.value)">
+        ${['free play','studying','on break','done'].map(s => `<option value="${s}" ${k.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <span class="badge ${statusColors[k.status] || 'b-gray'}">${k.status}</span>
+    </div>`).join('');
+  updateDashboardStats();
+}
+
+function updateKidStatus(i, val) { kids[i].status = val; renderKids(); }
+
+// ---- SCHEDULE ----
+const blockColors = {
+  parent: ['#E1F5EE','#085041'],
+  all: ['#FAEEDA','#633806'],
+};
+const kidBlockColors = [['#EEEDFE','#3C3489'],['#FAECE7','#712B13'],['#E6F1FB','#0C447C']];
+
+function renderScheduleWhoSelect() {
+  const sel = document.getElementById('block-who');
+  const current = sel.value;
+  sel.innerHTML = '<option value="parent">Parent — focus block</option><option value="all">All kids</option>' +
+    kids.map(k => `<option value="${k.name}">${k.name}</option>`).join('');
+  if (current) sel.value = current;
+}
+
+function addBlock() {
+  const time = document.getElementById('block-time').value;
+  const title = document.getElementById('block-title').value.trim();
+  const who = document.getElementById('block-who').value;
+  if (!title) { alert('Please enter an activity name.'); return; }
+  let color;
+  if (blockColors[who]) color = blockColors[who];
+  else {
+    const idx = kids.findIndex(k => k.name === who);
+    color = kidBlockColors[idx % kidBlockColors.length];
+  }
+  scheduleBlocks.push({ time, title, who, color });
+  document.getElementById('block-title').value = '';
+  renderSchedule();
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schedule-blocks');
+  if (scheduleBlocks.length === 0) { el.innerHTML = '<p style="font-size:13px;color:var(--text2);padding:8px 0">No blocks yet. Add one below.</p>'; return; }
+  const sorted = [...scheduleBlocks].sort((a, b) => a.time.localeCompare(b.time));
+  el.innerHTML = sorted.map(b => `
+    <div class="sch-row">
+      <div class="sch-time">${b.time}</div>
+      <div class="sch-block" style="background:${b.color[0]}">
+        <div class="sch-title" style="color:${b.color[1]}">${b.title}</div>
+        <div class="sch-who" style="color:${b.color[1]}">${b.who}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ---- TIMER ----
+function updateTimerDisplay() {
+  const m = Math.floor(timerSecs / 60), s = timerSecs % 60;
+  document.getElementById('timer-display').textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const arc = document.getElementById('timer-arc');
+  const pct = timerSecs / timerTotal;
+  arc.setAttribute('stroke-dashoffset', String(Math.round(490 * (1 - pct))));
+  arc.setAttribute('stroke', timerSecs < 60 ? '#D85A30' : '#534AB7');
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval); timerRunning = false;
+    document.getElementById('timer-toggle').textContent = 'Resume';
+  } else {
+    timerRunning = true;
+    document.getElementById('timer-toggle').textContent = 'Pause';
+    timerInterval = setInterval(() => {
+      if (timerSecs > 0) {
+        timerSecs--;
+        updateTimerDisplay();
+        if (timerSecs % 60 === 0) { focusMinutes++; updateFocusTime(); }
+      } else {
+        clearInterval(timerInterval); timerRunning = false;
+        document.getElementById('timer-status').textContent = 'Done! Take a break.';
+        document.getElementById('timer-toggle').textContent = 'Start';
+        alert('Focus block complete! Time for a break.');
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval); timerRunning = false;
+  setMode();
+  document.getElementById('timer-toggle').textContent = 'Start';
+  document.getElementById('timer-status').textContent = 'Focus block';
+}
+
+function setMode() {
+  const m = parseInt(document.getElementById('timer-mode').value);
+  timerTotal = m * 60; timerSecs = timerTotal;
+  document.getElementById('timer-status').textContent = m <= 15 ? 'Break' : 'Focus block';
+  updateTimerDisplay();
+}
+
+function updateFocusTime() {
+  const h = Math.floor(focusMinutes / 60), m = focusMinutes % 60;
+  document.getElementById('focus-today').textContent = h + 'h ' + m + 'm';
+}
+
+// ---- MOODS ----
+const moodEmojis = [{ e: '😄', l: 'great' }, { e: '🙂', l: 'good' }, { e: '😐', l: 'okay' }, { e: '😤', l: 'restless' }, { e: '😢', l: 'upset' }];
+
+function renderMoods() {
+  const el = document.getElementById('mood-panel');
+  if (kids.length === 0) { el.innerHTML = '<p style="font-size:13px;color:var(--text2)">Add kids on the Dashboard first.</p>'; return; }
+  el.innerHTML = kids.map((k, ki) => `
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">${k.name}</div>
+      <div class="mood-grid">
+        ${moodEmojis.map((m, mi) => `
+          <button class="mood-btn" onclick="selectMood(${ki}, ${mi}, this)">
+            <div class="mood-emoji">${m.e}</div>
+            <div class="mood-lbl">${m.l}</div>
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function selectMood(kidIdx, moodIdx, btn) {
+  btn.closest('.mood-grid').querySelectorAll('.mood-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const mood = moodEmojis[moodIdx];
+  const kid = kids[kidIdx];
+  if (mood.l === 'restless' || mood.l === 'upset') {
+    alert(kid.name + ' seems ' + mood.l + '. Consider settling them with a quiet activity before starting your focus block.');
+  }
+}
+
+// ---- TASKS ----
+function renderTaskWhoSelect() {
+  const sel = document.getElementById('task-who-select');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select a child</option>' + kids.map(k => `<option value="${k.name}">${k.name}</option>`).join('');
+  if (current) sel.value = current;
+}
+
+function addTask() {
+  const text = document.getElementById('task-input').value.trim();
+  const who = document.getElementById('task-who-select').value;
+  if (!text) { alert('Please enter a task description.'); return; }
+  if (!who) { alert('Please select a child.'); return; }
+  tasks.push({ id: Date.now(), text, who, done: false });
+  document.getElementById('task-input').value = '';
+  renderTasks();
+}
+
+function toggleTask(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; renderTasks(); updateDashboardStats(); }
+}
+
+function renderTasks() {
+  const el = document.getElementById('task-list');
+  if (tasks.length === 0) { el.innerHTML = '<p style="font-size:13px;color:var(--text2);padding:8px 0">No tasks yet. Add one below.</p>'; return; }
+  const byKid = {};
+  tasks.forEach(t => { if (!byKid[t.who]) byKid[t.who] = []; byKid[t.who].push(t); });
+  el.innerHTML = Object.entries(byKid).map(([kid, ts]) => `
+    <div class="section-kid">
+      <div class="section-kid-name">${kid}</div>
+      ${ts.map(t => `
+        <div class="task-item">
+          <div class="task-check ${t.done ? 'done' : ''}" onclick="toggleTask(${t.id})"></div>
+          <div class="task-text ${t.done ? 'done' : ''}">${t.text}</div>
+        </div>`).join('')}
+    </div>`).join('');
+  updateDashboardStats();
+}
+
+function updateDashboardStats() {
+  const done = tasks.filter(t => t.done).length;
+  document.getElementById('tasks-stat').textContent = done + '/' + tasks.length;
+  document.getElementById('interrupt-count').textContent = interruptCount;
+}
+
+function logInterrupt() {
+  interruptCount++;
+  updateDashboardStats();
+}
+
+// ---- SOUNDS ----
+const noises = [
+  { name: 'Rain', desc: 'Gentle rainfall — great for focus', icon: '🌧' },
+  { name: 'Cafe', desc: 'Coffee shop background hum', icon: '☕' },
+  { name: 'Forest', desc: 'Birds, breeze, rustling leaves', icon: '🌿' },
+  { name: 'Brown noise', desc: 'Deep low-frequency masking', icon: '🎧' },
+  { name: 'White noise', desc: 'Consistent high-frequency mask', icon: '〰' },
+];
+
+function renderNoise() {
+  const el = document.getElementById('noise-list');
+  el.innerHTML = noises.map((n, i) => `
+    <div class="noise-card ${activeNoise === i ? 'active' : ''}" onclick="selectNoise(${i})">
+      <div class="noise-icon">${n.icon}</div>
+      <div style="flex:1">
+        <div class="noise-name">${n.name}</div>
+        <div class="noise-desc">${n.desc}</div>
+      </div>
+      <span class="badge ${activeNoise === i ? 'b-green' : 'b-gray'}">${activeNoise === i ? 'Playing' : 'Play'}</span>
+    </div>`).join('');
+}
+
+function selectNoise(i) { activeNoise = activeNoise === i ? null : i; renderNoise(); }
+
+function animateNoise() {
+  noiseLevel = Math.min(100, Math.max(5, noiseLevel + (Math.random() * 18 - 9)));
+  const pct = Math.round(noiseLevel);
+  document.getElementById('noise-fill').style.width = pct + '%';
+  document.getElementById('noise-fill').style.background = pct < 30 ? '#5DCAA5' : pct < 60 ? '#EF9F27' : '#E24B4A';
+  document.getElementById('noise-text').textContent = pct < 30 ? 'Quiet — great for calls' : pct < 60 ? 'Moderate — okay for most calls' : 'Loud — use headphones or move rooms';
+  setTimeout(animateNoise, 1400);
+}
+
+// ---- INIT ----
+updateTimerDisplay();
+renderNoise();
+animateNoise();
+</script>
+</body>
+</html>
